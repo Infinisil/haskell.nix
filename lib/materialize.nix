@@ -35,8 +35,12 @@ let
 
   unchecked =
     let
-      sha256message = "To make this a fixed-output derivation but not materialized, set `${sha256Arg}` to the output of ${calculateMaterializedSha}";
-      materializeMessage = "To materialize the output entirely, pass a writable path as the `materialized` argument and pass that path to ${generateMaterialized}";
+      # Ensures that the given derivation is built before it is evaluated
+      # by making evaluation depend on the derivation result (forced IFD)
+      # Needed for below messages because otherwise they print non-existant store paths
+      realizeDrv = drv: builtins.seq (builtins.readFile drv) drv;
+      sha256message = "To make this a fixed-output derivation but not materialized, set `${sha256Arg}` to the output of ${realizeDrv calculateMaterializedSha}";
+      materializeMessage = "To materialize the output entirely, pass a writable path as the `materialized` argument and pass that path to ${realizeDrv generateMaterialized}";
     in if reasonNotSafe != null
       then
         # Warn the user if they tried to pin stuff down when it is not safe
